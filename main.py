@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, Form, Response, Depends
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi_login import LoginManager
 from fastapi_login.exceptions import InvalidCredentialsException #유효하지 않는 계정정보 에러처리
@@ -12,21 +14,20 @@ app = FastAPI()
 
 SECRET = "super-coding" #시크릿 키로 암/복호화 - 실제 코딩에서는 노출시키면 안 됨!
 manager = LoginManager(SECRET, '/login') #access 토큰 만들어주는 역할 (시크릿 키, jwt토큰 발급할 위치) 
-###
-#@app.post('/items')
-#async def create_item(image:UploadFile,
-#                title:Annotated[str,Form()],
-#                price:Annotated[int,Form()],
-#                description:Annotated[str,Form()],
-#                place:Annotated[str,Form()]):
-#    image_bytes = await image.read() #image 읽는 시간 필요
-#    cur.execute(f"""
-#                INSERT INTO items(title, image, price, description, place) 
-#                VALUES ('{title}','{image_bytes.hex()}', {price}, '{description}', '{place}') 
-#                """) #'{문자열}' {숫자}, hex()->16진수로 변환(데이터 길이 줄이기)
-#    con.commit()
-#    return '200'
-###
+
+@app.post('/items')
+async def create_item(image:UploadFile,
+                title:Annotated[str,Form()],
+                price:Annotated[int,Form()],
+                description:Annotated[str,Form()],
+                place:Annotated[str,Form()]):
+    image_bytes = await image.read() #image 읽는 시간 필요
+    cur.execute(f"""
+                INSERT INTO items(title, image, price, description, place) 
+                VALUES ('{title}','{image_bytes.hex()}', {price}, '{description}', '{place}') 
+                """) #'{문자열}' {숫자}, hex()->16진수로 변환(데이터 길이 줄이기)
+    con.commit()
+    return '200'
 
 @app.get('/items')
 async def get_items(user=Depends(manager)): #access token이 있을 때만(인증된 상태에서만) 접근 가능
