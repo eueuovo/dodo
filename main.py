@@ -31,12 +31,20 @@ async def create_item(image:UploadFile,
 
 @app.get('/items')
 async def get_items(user=Depends(manager)): #access token이 있을 때만(인증된 상태에서만) 접근 가능
+    #컬럼명도 같이 가져옴
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     rows = cur.execute(f""" 
                        SELECT * from items;
                        """).fetchall()
     return JSONResponse(jsonable_encoder(dict(row) for fow in rows))
+
+@app.get('/images/{item_id}')
+async def get_image(item_id):
+    cur = con.cursor()
+    image_bytes = cur.execute(f"""
+                              SELECT image from items WHERE id = {item_id}
+                              """).fetchone()[0]
 
 #회원가입
 @app.post("/signup")
@@ -55,14 +63,14 @@ def signup(id:Annotated[str,Form()],
 #로그인
 @manager.user_loader()
 def query_user(data):
-    WHERE_STATEMENTS = f'''id="{id}"'''
+    WHERE_STATEMENTS = f'id="{data}"'
     if type(data) == dict:
-        WHERE_STATEMENTS = f'''id="{data[id]}"'''
+        WHERE_STATEMENTS = f'''id="{data['id']}"'''
     #컬럼명도 같이 가져옴
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     user = cur.execute(f"""
-                        SELECT * FROM users WHERE id='{id}'
+                        SELECT * FROM users WHERE {WHERE_STATEMENTS}
                        """).fetchone()
     return user
 
